@@ -32,6 +32,29 @@ library(RColorBrewer)
 mycols <- RColorBrewer::brewer.pal(8, "Dark2")
 ```
 
+## Slides and Material
+
+You can find the slides (and additional materials) here:
+[XXX](XXX).
+
+## Who Am I?
+
+Julia Haaf
+
+Assistant Professor at the Psychological Methods Department, University of Amsterdam
+
+email: j.m.haaf@uva.nl
+
+*Job alert:* Two temporary assistant professor positions at the Psychological Methods Unit ([https://www.academictransfer.com/nl/297540/assistant-professor-of-psychological-methods/](https://www.academictransfer.com/nl/297540/assistant-professor-of-psychological-methods/)).
+
+## Who Are You?
+
+<br>
+
+<br>
+
+<img src="pics/who.png" width="400">
+
 ## Outline
 
 1. Introduction to Bayesian inference
@@ -45,9 +68,9 @@ mycols <- RColorBrewer::brewer.pal(8, "Dark2")
 ## Example
 
 >- Effect of media stories on attitudes towards Syrian refugees.
->- IV: Sympathetic media story about refugees or control stofy about food trends.
+>- IV: Sympathetic media story about refugees or control story about food trends.
 >- DV: Participants’ favorability ratings towards refugees.
->- Also recorded: Political affiliation of the participants.
+>- Also recorded: Political affiliation of the participants (conservative or liberal).
 
 <br>
 
@@ -63,6 +86,7 @@ Example from @Rouder:etal:2018
 
 >- Conduct a $t$-test to assess the effect of media stories on attitudes towards Syrian refugees.
 >- Conduct a 2x2 ANOVA to assess the effects of both media stories and political affiliation as well as their interaction.
+>- Not possible to provide evidence against these effects using classical statistics.
 >- Neither necessarily match the research questions associated with the study.
 >- Baysian model comparison allows to better match inference and theoretical questions.
 >- But you can also do the regular stuff.
@@ -88,7 +112,7 @@ Example from @Rouder:etal:2018
 
 <br>
 
-```{r, fig.asp = 0.7, fig.width=5}
+```{r, fig.asp = 0.65, fig.width=6}
 par(cex = 1.2, mgp = c(2, .7, 0), mar = c(3,3,1,1))
 x <- seq(-1.5, 1.5, .01)
 y <- msm::dtnorm(x, 0, 0.7, lower = 0)
@@ -104,7 +128,7 @@ plot(x, y, type = "l", col = mycols[1]
 - $\calM_0:$ There is no effect of media stories on attitudes.
 
 
-```{r, fig.asp = 0.65, fig.width=6.5}
+```{r, fig.asp = 0.65, fig.width=6}
 par(cex = 1.2, mgp = c(2, .7, 0), mar = c(3,3,1,1))
 x <- seq(-1.5, 1.5, .01)
 y <- msm::dtnorm(x, 0, 0.7, lower = 0)
@@ -119,9 +143,9 @@ legend("topleft", legend = c(expression(M[1]: ~ "Positive effect"), expression(M
 ## Testing position 1
 
 >- The prior distribution indicates the plausibility of effects before the data have been collected.
->- Because we make this fine-grained specification, predictions are now possible.
+>- Because we make this fine-grained specification, we can also make predictions *before* collecting any data!
 
-```{r, fig.asp = 0.65, fig.width=6.5}
+```{r, fig.asp = 0.65, fig.width=6}
 par(cex = 1.2, mgp = c(2, .7, 0), mar = c(3,3,1,1))
 x <- seq(-1.5, 1.5, .01)
 y <- msm::dtnorm(x, 0, 0.7, lower = 0)
@@ -234,6 +258,7 @@ polygon(x = c(1.5, 0.23, 0.23, 1.5), y = c(0,0,2,2)
 abline(v = 0.4, lwd = 4, col = mycols[6])
 
 dat.pt <- pred[round(pred$theta, 3) == 0.400,]
+points(c(.4, .4), c(dat.pt$Density[1], dat.pt$Density[2]), col = mycols[6], pch = 19, cex = 1.5)
 BF <- dat.pt$Density[1] / dat.pt$Density[2]
 text(0.8, 1.5, labels = paste("BF =", round(BF, 2)), cex = 1.3)
 ```
@@ -277,47 +302,50 @@ text(0.8, 1.5, labels = paste("BF =", round(BF, 2)), cex = 1.3)
 
 # $t$-Test
 
-## $t$-Test
-
-Can be used to test our position 1 .
-
-Equation setup
-
 ## $t$-Test using BayesFactor
+
+Can be used to test our position 1: The media story increases favorability ratings of refugees.
 
 ```{r}
 set.seed(123)
 source("R-code/generate_data.R")
-immigration_study$story <- factor(immigration_study$story)
-# write.csv(immigration_study, "data/dat_immigration.csv")
+media_study <- immigration_study
+media_study$story <- factor(media_study$story)
+# write.csv(media_study, "data/dat_media.csv")
 ```
 
 ```{r, echo = T, eval = F}
 BayesFactor::ttestBF(formula = attitude ~ story
-                     , data = immigration_study)
+                     , data = media_study)
 ```
+
+If you want to understand formulas in R better try this [tutorial](https://r4ds.had.co.nz/model-basics.html#formulas-and-model-families) (for general setup) and this [tutorial](https://m-clark.github.io/mixed-models-with-R/random_intercepts.html) (for mixed models).
 
 ## Prior settings
 
 - $\calM_1:$ The effect of media stories on attitudes is positive.
 - $\calM_0:$ There is no effect of media stories on attitudes.
+
 >- Attitudes might be normally distributed: $Y_{ij} \sim \mbox{Normal}(\mu + x_j \theta, \sigma^2)$.
 >- For model $\calM_0$ $\theta = 0$.
->- For model $\calM_1$ we need a prior on mu: $\theta$ 
+>- For model $\calM_1$ we need a prior distribution on the effect, $\theta$ 
 >- Prior on $\sigma^2$ and $\mu$?
 
-## Three reasons for using informed priors
+## Four reasons for using informed priors
 
-## 1. You gotta know something
+>1. It is necessary
+>2. You gotta know something
+
+## 2. You gotta know something
 
 <div class="row">
   <div class="column">
 <h4> You are... </h4>
 <br>
 
->- A researcher in psychology.
->- Working in their field of expertise.
->- Standing on the shoulders of previous generations of researchers.
+- A researcher in psychology.
+- Working in their field of expertise.
+- Standing on the shoulders of previous generations of researchers.
 
 </div>
   <div class="column">
@@ -327,7 +355,13 @@ BayesFactor::ttestBF(formula = attitude ~ story
 </div>
 </div>
 
-## 2. Informed priors $\rightarrow$ informative tests
+## Four reasons for using informed priors
+
+1. It is necessary
+2. You gotta know something
+3. Informed priors $\rightarrow$ informative tests
+
+## 3. Informed priors $\rightarrow$ informative tests
 
 Obtain strong evidence by increasing model discriminability.
 
@@ -337,7 +371,14 @@ Obtain strong evidence by increasing model discriminability.
 @Stefan_etal2019
 </p>
 
-## 3. Informed priors ensure identifiability
+## Four reasons for using informed priors
+
+1. It is necessary
+2. You gotta know something
+3. Informed priors $\rightarrow$ informative tests
+4. Informed priors ensure identifiability
+
+## 4. Informed priors ensure identifiability
 
 - Complex models often suffer from identifiability issues.
 
@@ -349,7 +390,8 @@ Obtain strong evidence by increasing model discriminability.
 
 >- `BayesFactor` package in `R` and `JASP` use default priors for the t-test called JZS prior.
 >- Prior structure is consistent.
->- User-defined prior settings are on the scale of the effect size:
+>- Joint prior on $\mu$ and $\sigma^2$ is a Jeffreys prior.
+>- User-defined informed prior settings are on the scale of the effect size:
 >- $\delta = \theta / \sigma$ (think Cohen's $d$).
 
 ## The blessing of default priors
@@ -360,7 +402,7 @@ Obtain strong evidence by increasing model discriminability.
 
 ```{r, echo = T, eval = F}
 BayesFactor::ttestBF(formula = attitude ~ story
-                     , data = immigration_study
+                     , data = media_study
                      , rscale = 1 / sqrt(2))
 ```
 
@@ -368,7 +410,7 @@ BayesFactor::ttestBF(formula = attitude ~ story
 
 ```{r, echo = T, eval = F}
 BayesFactor::ttestBF(formula = attitude ~ story
-                     , data = immigration_study
+                     , data = media_study
                      , rscale = 1 / sqrt(2))
 ```
 
@@ -383,9 +425,9 @@ lines(x, dnorm(x), col = adjustcolor(1, .5), lty = 2, lwd = 2)
 abline(v = c(-1, 0, 1), lwd = 0.5, col = adjustcolor(1, alpha.f = 0.3))
 ```
 
-## The blessing of default priors
+## The blessing of default priors | Figure code
 
-```{r, fig.asp = .7, fig.width=5.5, echo = T}
+```{r, fig.asp = .7, fig.width=5.5, echo = T, eval = F}
 par(mar = c(3,3,.5,.5), mgp = c(2,.7,0))
 x <- seq(-3, 3, .01)
 y <- dcauchy(x, 0, 1/sqrt(2))
@@ -398,14 +440,19 @@ abline(v = c(-1, 0, 1), lwd = 0.5, col = adjustcolor(1, alpha.f = 0.3))
 
 ## Prior prediction
 
-```{r sim-pred-ttest, cache = T}
+>- Prior $\rightarrow$ we can make predictions on data.
+>- This is a bit tricky with the JZS prior though...
+
+## Prior prediction
+
+```{r sim-pred-ttest, cache = T, echo = T}
 sim.pred.fun <- function(scale){
   delta <- rcauchy(1, location = 0, scale = scale)
   mu <- runif(1, -1000, 1000)
   s2 <- MCMCpack::rinvgamma(1, 0.5, 0.5)
   
   I <- 100
-  cond <- rep(c(-0.5, 0.5), each = I)
+  cond <- rep(c(-1/sqrt(2), 1/sqrt(2)), each = I)
   y <- rnorm(2 * I, mu + cond * delta * sqrt(s2), sqrt(s2))
   
   return(diff(tapply(y, cond, mean)))
@@ -419,7 +466,7 @@ round(quantile(res), 2)
 
 ```{r, echo = T, eval = F}
 BayesFactor::ttestBF(formula = attitude ~ story
-                     , data = immigration_study
+                     , data = media_study
                      , rscale = 1 / 4)
 ```
 
@@ -472,9 +519,9 @@ abline(v = c(-1, 0, 1), lwd = 0.5, col = adjustcolor(1, alpha.f = 0.3))
 
 ## $t$-Test using BayesFactor | Output
 
-```{r, echo = T, eval = F}
+```{r, echo = T}
 BayesFactor::ttestBF(formula = attitude ~ story
-                     , data = immigration_study
+                     , data = media_study
                      , rscale = 1 / 2)
 ```
 
@@ -488,8 +535,22 @@ The plight of refugees generates an empathic response which results in an increa
 
 ```{r est-ttest, echo = T, cache = T}
 est.attitude <- BayesFactor::ttestBF(formula = attitude ~ story
-                     , data = immigration_study, rscale = 1 / 2
+                     , data = media_study, rscale = 1 / 2
                      , posterior = T, iterations = 20000)
+```
+
+## Estimating the effect
+
+```{r est-ttest2, echo = T, cache = T, fig.asp = .5, fig.width=6, eval = F}
+est.attitude <- BayesFactor::ttestBF(formula = attitude ~ story
+                     , data = media_study, rscale = 1 / 2
+                     , posterior = T, iterations = 20000)
+
+plot(est.attitude[,"beta (Neutral - Refugee plight)"])
+```
+
+```{r, fig.asp = .5, fig.width=6}
+par(mar= c(3, 3, 1.5, 1), mgp = c(2, .7, 0))
 plot(est.attitude[,"beta (Neutral - Refugee plight)"])
 ```
 
@@ -531,7 +592,7 @@ The plight of refugees generates an empathic response which results in an increa
 
 ```{r, echo = T}
 BayesFactor::ttestBF(formula = attitude ~ story
-                     , data = immigration_study
+                     , data = media_study
                      , rscale = 1 / 2
                      , nullInterval = c(-Inf, 0))
 ```
@@ -540,7 +601,7 @@ BayesFactor::ttestBF(formula = attitude ~ story
 
 1. New data set, this time real data.
 2. Run a Bayesian t-test, try out ordinal constraints and estimation, maybe even prior prediction.
-3. As questions while I am here!
+3. Ask questions while I am here!
 
 ```{r echo = T, cache = T, eval = F}
 SourceURL <- "https://raw.githubusercontent.com/PerceptionCognitionLab/data0/master
@@ -548,22 +609,40 @@ SourceURL <- "https://raw.githubusercontent.com/PerceptionCognitionLab/data0/mas
 devtools::source_url(SourceURL)
 ```
 
+<div class="row">
+  <div class="column">
+  
+```{r echo = T, message = F, warning = F, eval = F}
+library(tidyverse)
+
+stroop.agg <- stroop %>%
+  group_by(ID, congruency) %>%
+  summarize(mrt = mean(RT)) %>%
+  spread(congruency, mrt)
+```
+
+</div>
+  <div class="column">
 <img src="pics/do.png" width="220" align="right">
 
-## Your turn!
+</div>
+</div>
 
 ```{r echo = F, cache = T, message=F, warning=F, results='hide'}
 SourceURL <- "https://raw.githubusercontent.com/PerceptionCognitionLab/data0/master/contexteffects/FlankerStroopSimon/cleaning.R"
 devtools::source_url(SourceURL)
 ```
 
-```{r eval = F, message=F, warning=F, results='hide'}
+```{r echo = F, message = F, warning = F}
 library(tidyverse)
+
 stroop.agg <- stroop %>%
   group_by(ID, congruency) %>%
   summarize(mrt = mean(RT)) %>%
   spread(congruency, mrt)
+```
 
+```{r eval = F, message=F, warning=F, results='hide'}
 BayesFactor::ttestBF(x = stroop.agg$incongruent
                      , y = stroop.agg$congruent
                      , paired = T)
@@ -574,15 +653,6 @@ est.stroop <- BayesFactor::ttestBF(x = stroop.agg$incongruent
 plot(est.stroop[,"delta"])
 ```
 
-```{r echo = T, message = F, warning = F}
-library(tidyverse)
-
-stroop.agg <- stroop %>%
-  group_by(ID, congruency) %>%
-  summarize(mrt = mean(RT)) %>%
-  spread(congruency, mrt)
-```
-
 
 # Analysis of variance
 
@@ -591,13 +661,15 @@ stroop.agg <- stroop %>%
 >- Based on @Rouder:etal:2012.
 >- Between-subject, within-subject and mixed designs.
 >- Random effects.
->- Perhaps the most thought out functionlity in BayesFactor.
+>- Perhaps the most thought out functionality in BayesFactor.
 
 ## ANOVA models
 
 <center>
 <img src="pics/ANOVA.png" width="650">
 </center>
+
+Figure from @Rouder:etal:2016d
 
 ## ANOVA parameterization
 
@@ -609,37 +681,339 @@ stroop.agg <- stroop %>%
 ## ANOVA in practice
 
 ```{r, echo = T, eval = F}
-immigration_study$story <- factor(immigration_study$story)
-immigration_study$political_affiliation <- factor(immigration_study$political_affiliation)
+media_study$story <- factor(media_study$story)
+media_study$political_affiliation <- factor(media_study$political_affiliation)
+
 BayesFactor::anovaBF(formula = attitude ~ story * political_affiliation
-                     , data = immigration_study)
+                     , data = media_study)
 ```
 
 ## ANOVA in practice
 
-- `rscaleEffects` = A named vector of prior settings for individual factors, overriding `rscaleFixed` and `rscaleRandom.` Values are scales, names are factor names.
+>`rscaleEffects` = A named vector of prior settings for individual factors, overriding `rscaleFixed` and `rscaleRandom.` Values are scales, names are factor names.
 
 ```{r, echo = T, eval = F}
 BayesFactor::anovaBF(formula = attitude ~ story * political_affiliation
-                     , data = immigration_study
+                     , data = media_study
                      , rscaleEffects = c("story" = 1/2
                                          , "political_affiliation" = 1/2
                                          , "story:political_affiliation" = 1/3))
 ```
 
-## Estimation
+## ANOVA in practice | Output
 
-## Ordinal constraints
+```{r}
+media_study$story <- factor(media_study$story)
+media_study$political_affiliation <- factor(media_study$political_affiliation)
+```
+
+```{r, echo = T, eval = T}
+BayesFactor::anovaBF(formula = attitude ~ story * political_affiliation
+                     , data = media_study
+                     , rscaleEffects = c("story" = 1/2
+                                         , "political_affiliation" = 1/2
+                                         , "story:political_affiliation" = 1/3))
+```
+
+## ANOVA models
+
+<center>
+<img src="pics/ANOVA.png" width="650">
+</center>
+
+## Prior Sensitivity
+
+>- How does your prior influence the results of the analysis?
+>- Redo the analysis for a range of priors.
+>- If the results are (relatively) stable then we may trust them more.
+
+## Prior Sensitivity
+
+- How does your prior influence the results of the analysis?
+- Redo the analysis for a **reasonable** range of priors.
+- If the results are (relatively) stable then we may trust them more.
+
+```{r, fig.width=6, fig.asp = .6}
+par(mgp = c(2, .7, .0), mar = c(3,3,1, .5), cex = 1.2)
+p.set <- seq(.1, .6, .01)
+bf <- c()
+for(i in 1:length(p.set)){
+  tmp <- BayesFactor::ttestBF(formula = attitude ~ story
+                     , data = media_study
+                     , nullInterval = c(-Inf, 0)
+                     , rscale = p.set[i])
+  bf[i] <- exp(tmp@bayesFactor[1,1])
+}
+plot(p.set, bf, type = "l", lwd = 2, col = "firebrick", ylab = "Bayes factor", xlab = "Scale setting"
+     , ylim = c(1, 5), main = "Media effect on attitude", bty = "n"
+     )
+lines(c(1/4, 1/4), c(1, bf[16]), lwd = 3, col = "slateblue")
+```
+
+## Prior Sensitivity | For two scales
+
+Explore the range of settings using all combinations.
+
+```{r}
+a <- c(.3, .5, .7)
+b <- c(.3, .5, .7)
+
+res <- expand.grid(a, b)
+colnames(res) <- letters[1:2]
+knitr::kable(res)
+```
+
+## Sensitivity analysis versus multiverse analysis
+
+>- In a multiverse analysis you draw your conclusions based on the entire space of possible parameter settings.
+>- The sensitivity analysis provides information about the robustness of your analysis and conclusions, it is not meant to replace the main analysis.
+>- Remember, you set the initial prior with care.
+
+<br>
+
+<img src="pics/caution.jpg" width="350" align="center">
 
 ## Your turn!
 
+1. Run the ANOVA analysis on the `dat_media.csv`.
+2. Conduct a sensitivity analysis for all three prior scales using *reasonable ranges* of settings.
+3. Is the variability in Bayes factor reasonable?
+
+TODO!!!
+
+```{r}
+
+```
+
+
+<br>
+
+<img src="pics/do.png" width="220" align="right">
+
+## Ordinal constraints
+
+>- Not as straight-forward as with the $t$-test.
+>- Not as impossible as with frequentist ANOVA.
+
+## Back to the three main theoretical positions
+
+1. The plight of refugees generates an empathic response which results in an increase in favorability for conservative and liberals alike.
+2. Confirmation bias [@Tversky:Kahneman:1974]: People ignore media stories incompatible with their world view. Therefore, only liberals are affected.
+3. Belief polarization [@Cook:Lewandowsky:2016]: Liberals see refugees more favorably after viewing positive stories while conservatives might actually see them more negatively.
+
+<center>
+<img src="pics/political-affiliation.jpg" width="300">
+</center>
+
+## Back to the three main theoretical positions
+
+1. The plight of refugees generates an empathic response which results in an increase in favorability for conservative and liberals alike.
+2. Confirmation bias [@Tversky:Kahneman:1974]: People ignore media stories incompatible with their world view. Therefore, only liberals are affected.
+3. **Belief polarization** [@Cook:Lewandowsky:2016]: Liberals see refugees more favorably after viewing positive stories while conservatives might actually see them more negatively.
+
+<center>
+<img src="pics/political-affiliation.jpg" width="300">
+</center>
+
+## Testing position 3
+
+3. **Belief polarization** [@Cook:Lewandowsky:2016]: Liberals see refugees more favorably after viewing positive stories while conservatives might actually see them more negatively.
+
+$\calM_2:$ The effect of the refugee media story is positive for liberals and negative for conservatives.
+
+## Testing position 3
+
+3. **Belief polarization** [@Cook:Lewandowsky:2016]: Liberals see refugees more favorably after viewing positive stories while conservatives might actually see them more negatively.
+
+$\calM_2:$ The effect of the refugee media story is positive for liberals and negative for conservatives.
+
+```{r child = "modelcomp.Rmd", message=F, warning=F}
+```
+
+## Testing position 3
+
+*Encompassing approach* [@Klugkist:etal:2005]:
+
+>1. Calculate/estimate the prior probability $P(\mbox{constraint})$ for the ordinal constraint.
+>2. Estimate the posterior probability $P(\mbox{constraint} | Y)$ from posterior samples of the model.
+>3. The Bayes factor between the unconstrained and the ordinal-constrained model can be estimated as $$BF = \frac{P(\mbox{constraint})}{P(\mbox{constraint} | Y)}$$
+
+## Testing position 3 | Prior probability
+
+>- Two constraints, symmetric priors: $0.5 \times 0.5 = 0.25$.
+>- Can also be estimated:
+\[
+\begin{align}
+Y_{RL} &= \mu + \theta_1 + \theta_2 + \theta_3\\
+Y_{CL} &= \mu - \theta_1 + \theta_2 - \theta_3\\
+Y_{RC} &= \mu + \theta_1 - \theta_2 - \theta_3\\
+Y_{CC} &= \mu - \theta_1 - \theta_2 + \theta_3\\
+\end{align}
+\]
+>- Constraints refer to $Y_{RL} - Y_{CL}$ and $Y_{RC} - Y_{CC}$, respectively.
+>- \[
+\begin{align}
+Y_{RL} - Y_{CL} &= 2\theta_1 + 2\theta_3\\
+Y_{RC} - Y_{CC} &= 2\theta_1 - 2\theta_3\\
+\end{align}
+\]
+
+## Testing position 3 | Prior probability
+
+\[
+\begin{align}
+Y_{RL} - Y_{CL} &= 2\theta_1 + 2\theta_3\\
+Y_{RC} - Y_{CC} &= 2\theta_1 - 2\theta_3\\
+\end{align}
+\]
+
+```{r echo = T}
+M <- 100000
+theta1 <- rcauchy(M)
+theta3 <- rcauchy(M)
+
+mean(theta1 + theta3 > 0 & theta1 - theta3 < 0)
+```
+
+## Testing position 3 | Posterior probability
+
+```{r}
+media_study$story <- factor(media_study$story)
+media_study$political_affiliation <- factor(media_study$political_affiliation)
+```
+
+```{r echo = T}
+tmp <- BayesFactor::anovaBF(formula = attitude ~ story * political_affiliation
+                     , data = media_study
+                     , rscaleEffects = c("story" = 1/2
+                                         , "political_affiliation" = 1/2
+                                         , "story:political_affiliation" = 1/3))
+
+est <- BayesFactor::posterior(model = tmp
+                              , iterations = 20000
+                              , index = 4)
+```
+
+## Testing position 3 | Posterior probability
+
+Reconstructing cell means and effects from the estimates.
+
+```{r echo = T}
+Y_cl <- est[, "story-Neutral"] + 
+  est[, "story:political_affiliation-Neutral.&.Liberals"]
+
+Y_rl <- est[, "story-Refugee plight"] + 
+  est[, "story:political_affiliation-Refugee plight.&.Liberals"]
+
+Y_cc <- est[, "story-Neutral"] + 
+  est[, "story:political_affiliation-Neutral.&.Conservatives"]
+
+Y_rc <- est[, "story-Refugee plight"] + 
+  est[, "story:political_affiliation-Refugee plight.&.Conservatives"]
+```
+
+```{r echo = T}
+(postprob <- mean(Y_rl - Y_cl > 0 & Y_rc - Y_cc < 0))
+```
+
+## Testing position 3 | Posterior probability
+
+Bayes factor:
+
+```{r echo = T}
+(BF_u3 <- 0.25 / postprob)
+```
+
+## Testing position 3 | Posterior probability
+
+```{r echo = T}
+bftab <- tmp@bayesFactor[, 1:2]
+bftab[, 1] <- exp(bftab[, 1])
+bftab[5, 1] <- bftab[4, 1] / BF_u3
+rownames(bftab)[5] <- "Position 3"
+knitr::kable(bftab)
+```
+
+## Your turn!
+
+- Go through the code and make sure you understand what is going on.
+- Say we wanted to test whether the effect of media story is positive both for liberals and conservatives. What would change and what would stay the same?
+- Implement the new constraint and report the Bayes factor for the new position 4 vs. the intercept-only model.
+
+<br>
+
+<img src="pics/do.png" width="220" align="right">
+
 # All the models
+
+## All the models
+
+- **General linear models (including linear mixed effects models): `generalTestBF`, `lmBF`**
+- Linear regression: `regressionBF`, `lmBF`
+- Linear correlation: `correlationBF`
+- $t$-tests: `ttestBF`
+- Meta-analytic $t$-tests: `meta.ttestBF`
+- ANOVA: `anovaBF`, `lmBF`
+- Contingency tables: `contingencyTableBF`
+- Single proportions: `proportionBF`
+
+## All the models
+
+```{r message=F, warning=F}
+library(BayesFactor)
+```
+
+> `r tufte::quote_footer('generalTestBF')`
+> This function computes Bayes factors corresponding to restrictions on a full model.
+
+```{r echo = T}
+data(puzzles)
+BayesFactor::generalTestBF(RT ~ shape * color + ID
+                           , data = puzzles
+                           , whichRandom = "ID")
+```
+
+## All the models
+
+> `r tufte::quote_footer('generalTestBF')`
+> This function computes Bayes factors corresponding to restrictions on a full model.
+
+> `r tufte::quote_footer('lmBF')`
+> This function computes Bayes factors, or samples from the posterior, of specific linear models (either ANOVA or regression).
+
+```{r echo = T}
+BayesFactor::lmBF(RT ~ shape + color + shape:color + ID
+     , data = puzzles
+     , whichRandom = "ID")
+```
 
 ## Continuous predictors
 
-## Bringing it all together
+@Rouder:Morey:2012
+
+<img src="pics/regression.png" width="800" align="center">
 
 ## Your turn
+
+- Now it is time to play.
+- Repeat the analysis for `dat_media` using `generalTestBF` and `lmBF`.
+- Alternatively, use your own data or continue with `bugs.csv`.
+
+<br>
+
+<img src="pics/do.png" width="220" align="right">
+
+## Bringing it all together
+
+>- `BayesFactor` can do a lot of conventional tests, but in Bayesian.
+>- Model comparison instead of parameter testing.
+>- For a full Bayesian analysis there are many tools in addition to Bayes factor:
+>- Prior predition,
+>- Estimation,
+>- Sensitivity analysis,
+>- Data plotting(!), ...
+
+<img src="pics/together.jpg" width="220" align="center">
 
 ## Thank you!
 

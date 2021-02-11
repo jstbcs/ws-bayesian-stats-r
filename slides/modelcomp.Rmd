@@ -1,0 +1,76 @@
+---
+title: "Model figure"
+output:
+  pdf_document: papaja::apa6_pdf
+  html_document: default
+  word_document: papaja::apa6_word
+---
+
+```{r}
+library(spatialfil)
+library("tmvtnorm")
+```
+
+
+```{r meta-prep-modelfig, cache = TRUE, warning=F}
+sd0 <- .45
+sd1 <- .2
+eta = .6
+
+gamma <- seq(-1.5, 1.5, .02)
+
+kern <- convKernel(sigma = 7, k = "gaussian")
+
+nrmlz <- function(mat)
+{
+  tot <- sum(mat)
+  mat/tot
+}
+normT <- function(theta1, theta2, Sigma, l , u){
+  dtnorm(theta1, 0, Sigma, lower = l[1], upper = u[1]) * dtnorm(theta2, 0, Sigma, lower = l[2], upper = u[2])
+}
+
+Pos <- outer(gamma
+                   , gamma
+                   , normT
+                   , sd0
+                   , l = c(0, -Inf)
+                   , u = c(Inf, 0))
+Pos <- nrmlz(Pos)
+
+top2 <- max(Pos)
+```
+
+```{r modelcomp, cache = FALSE, fig.asp = 1, dev = "png", fig.width=3.5}
+modFig <- function(mat, par, ylabel, xlabel, main, top, mod, xax = TRUE, yax = TRUE){
+  image(par
+        , par
+        , mat
+        , col = grey((256:0)/256)
+        , zlim = c(0, top)
+        , axes = FALSE
+        , ylab = ylabel
+        , xlab = xlabel
+        , frame.plot=TRUE
+        , main = ""
+        , cex.lab = 1.2)
+  if(xax == TRUE){
+  axis(1, at = seq(-1, 1, 1), cex.axis = 1.2)}
+  if(yax == TRUE){
+  axis(2, at = seq(-1, 1, 1), cex.axis = 1.2)}
+  abline(h = 0, col = "gray80", lty = "dotted")
+  abline(v = 0, col = "gray80", lty = "dotted")
+  mtext(mod, side = 2, line = 4)
+  mtext(main, side = 3, line = 1)
+}
+
+par(mgp = c(2, .7, 0), mar = c(3,3,1,1))
+
+#marginal
+modFig(Pos, gamma
+       , ylabel = "Conservatives", xlabel = "Liberals"
+       , mod = "", top = top2, main = ""
+       , xax = TRUE
+       , yax = TRUE)
+```
+

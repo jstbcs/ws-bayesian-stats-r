@@ -35,7 +35,7 @@ mycols <- RColorBrewer::brewer.pal(8, "Dark2")
 ## Slides and Material
 
 You can find the slides (and additional materials) here:
-[XXX](XXX).
+[https://github.com/jstbcs/ws-bayesian-stats-r](https://github.com/jstbcs/ws-bayesian-stats-r).
 
 ## Who Am I?
 
@@ -311,7 +311,7 @@ set.seed(123)
 source("R-code/generate_data.R")
 media_study <- immigration_study
 media_study$story <- factor(media_study$story)
-# write.csv(media_study, "data/dat_media.csv")
+# write.csv(media_study, "../data/dat_media.csv")
 ```
 
 ```{r, echo = T, eval = F}
@@ -827,7 +827,7 @@ $\calM_2:$ The effect of the refugee media story is positive for liberals and ne
 
 $\calM_2:$ The effect of the refugee media story is positive for liberals and negative for conservatives.
 
-```{r child = "modelcomp.Rmd", message=F, warning=F}
+```{r child = "R-code/modelcomp.Rmd", message=F, warning=F}
 ```
 
 ## Testing position 3

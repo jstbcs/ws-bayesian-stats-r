@@ -779,14 +779,11 @@ knitr::kable(res)
 2. Conduct a sensitivity analysis for all three prior scales using *reasonable ranges* of settings.
 3. Is the variability in Bayes factor reasonable?
 
-TODO!!!
-
-```{r}
-
+```{r eval = F, echo = T}
+geturl <-"https://raw.githubusercontent.com/jstbcs/ws-bayesian-stats-r/
+main/data/dat_media.csv"
+media_study <- read.csv(geturl)
 ```
-
-
-<br>
 
 <img src="pics/do.png" width="220" align="right">
 

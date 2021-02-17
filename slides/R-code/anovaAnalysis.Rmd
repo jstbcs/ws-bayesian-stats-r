@@ -1,0 +1,129 @@
+
+```{r}
+dat <- read.csv("../../data/bugs.csv")
+datl <- melt(dat, id.vars = c("Subject", "Gender", "Region", "Education"))
+datl$condition <- factor(datl$variable, labels = c("LL", "LH", "HL", "HH"))
+datl$fear <- with(datl, ifelse(condition %in% c("LL", "HL"), 0 , 1))
+datl$disgust <- with(datl, ifelse(condition %in% c("LL", "LH"), 0 , 1))
+datl <- subset(datl, !is.na(value))
+
+#Let's take a look at the data
+
+# apa_lineplot(datl, id = "Subject", factors = c("disgust", "fear"), dv = "value")
+# with(datl, tapply(value, list(fear, disgust), mean, na.rm = T))
+```
+
+```{r disgustmod, cache = T}
+datl$disgust <- factor(datl$disgust)
+datl$fear <- factor(datl$fear)
+datl$Subject <- factor(datl$Subject)
+mod.disgust <- BayesFactor::lmBF(value ~ disgust + Subject
+                                 , data = datl
+                                 , whichRandom = "Subject"
+                                 , rscaleEffects = c("disgust" = 1/2, "Sub" = 1/4))
+est.disgust <- BayesFactor::posterior(mod.disgust, iterations = 20000)
+```
+
+```{r genmod, cache = T}
+mod.gen <- BayesFactor::lmBF(value ~ disgust + fear + disgust:fear + Subject
+                             , data = datl
+                             , whichRandom = "Subject"
+                             , rscaleEffects = c("disgust" = 1/2
+                                                 , "fear" = 1/2
+                                                 , "disgust:fear" = 1/3
+                                                 , "Sub" = 1/4))
+est.gen <- BayesFactor::posterior(mod.gen, iterations = 20000)
+```
+
+```{r consmod, cache = T}
+datl$yuk <- factor(ifelse(datl$condition == "LL", 0, 1))
+mod.eq <- BayesFactor::lmBF(value ~ yuk + Subject
+                              , data = datl
+                              , whichRandom = "Subject"
+                              , rscaleEffects = c("yuk" = 1/2, "Sub" = 1/4))
+est.eq <- BayesFactor::posterior(mod.eq, iterations = 20000)
+```
+
+
+```{r BF}
+# Consistent positive model
+
+#Prior
+priorPconsistent <- 1/12
+
+### Consistent: muLL < (muLH, muHL) < muHH
+is.add <- function(mu){
+  mu[1] < mu[2] & mu[1] < mu[3] & mu[2] < mu[4] & mu[3] < mu[4]
+}
+
+LL <- est.gen[, "disgust-0"] + est.gen[, "fear-0"] + est.gen[, "disgust:fear-0.&.0"]
+LH <- est.gen[, "disgust-1"] + est.gen[, "fear-0"] + est.gen[, "disgust:fear-1.&.0"]
+HL <- est.gen[, "disgust-0"] + est.gen[, "fear-1"] + est.gen[, "disgust:fear-0.&.1"]
+HH <- est.gen[, "disgust-1"] + est.gen[, "fear-1"] + est.gen[, "disgust:fear-1.&.1"]
+
+#Posterior
+res <- apply(cbind(LL, LH, HL, HH), 1, is.add)
+postPconsistent <- mean(res)
+
+#Bayes factor
+BF_cg <- postPconsistent / priorPconsistent
+
+# Positive equality model
+
+#Prior
+priorPeq <- 1/2
+
+###Equal: muLL < (muLH, muHL, muHH)
+is.eq <- function(mu){
+  mu[1] < mu[2]
+}
+
+low <- est.eq[, "yuk-0"]
+high <- est.eq[, "yuk-1"]
+
+#Posterior
+res <- apply(cbind(low, high), 1, is.eq)
+postPeq <- mean(res)
+
+#Bayes factor
+BF_ee <- postPeq / priorPeq
+
+
+# Positive disgust-only model
+
+#Prior
+priorPeq <- 1/2
+
+###Equal: muLL < (muLH, muHL, muHH)
+is.disg <- function(mu){
+  mu[1] < mu[2]
+}
+
+low <- est.disgust[, "disgust-0"]
+high <- est.disgust[, "disgust-1"]
+
+#Posterior
+res <- apply(cbind(low, high), 1, is.disg)
+postPeq <- mean(res)
+
+#Bayes factor
+BF_dd <- postPeq / priorPeq
+```
+
+```{r allBF}
+#All compared to unconstrained
+
+bf0u <- 1 / exp(mod.gen@bayesFactor[1])
+bfcu <- BF_cg
+bfeu <- exp(mod.eq@bayesFactor[1] - mod.gen@bayesFactor[1]) * BF_ee
+bfdu <- exp(mod.disgust@bayesFactor[1] - mod.gen@bayesFactor[1]) * BF_dd
+
+bfs <- c('bf0u' =  bf0u
+         , 'bfcu' = bfcu
+         , 'bfeu' = bfeu
+         , 'bfdu' = bfdu
+         )
+
+# bfs
+```
+

@@ -1,0 +1,31 @@
+---
+title: "Your Turn!"
+subtitle: "Random effects"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(diagram)
+library(RColorBrewer)
+library(reshape2)
+
+mycols <- RColorBrewer::brewer.pal(8, "Dark2")
+```
+
+1. Let's simulate some hierarchical data! Consider an experiment where each of $I = 100$ participants responds to $K = 50$ trials in $J = 2$ conditions. Simulate data from the following model:
+
+\[Y_{ijk} \sim \mbox{Normal}(\mu + \alpha_i + x_j \theta_i, \sigma^2),\]
+
+where $\alpha_i \sim \mbox{Normal}(0, \sigma^2_\alpha)$ is the random intercept, and $\theta_i \sim \mbox{Normal}(\theta_0, \sigma^2_\theta)$ is the random slope. Pick values for $\sigma^2, \sigma^2_\theta, \sigma^2_\alpha, \mu,$ and $\theta_0$ and simulate data (should be $N = I\times J\times K = 10000$ observations). Check whether the results seem reasonable (`boxplot` or `hist`, check the observed effects per person, etc.).
+
+2. Conduct a Bayes factor analysis using `generalTestBF()`. Carefully pick your priors. You actually can let the true values from your simulation inform your scale choices.
+
+3. Alter the true settings of your simulation to see the effect on the Bayes factor analysis. For example, you can remove a random effect (e.g., $\sigma^2_\theta = 0$).
+
+\vspace{7.5cm}
+
+```{r, out.width = "30%", fig.align='right', echo = F}
+knitr::include_graphics("../slides/pics/do.png")
+```

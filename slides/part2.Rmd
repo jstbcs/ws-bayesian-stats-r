@@ -1319,6 +1319,14 @@ include_graphics("pics/gelman.png")
 
 ## Random effects | Philosophy
 
+```{r, out.width = "100%", out.extra = 'id="zoom-margin"'}
+include_graphics("pics/stein.png")
+```
+
+Efron & Morris (1977)
+
+## Random effects | Philosophy
+
 >- In frequentist statistics: Data are observed and follow probability distributions. Parameters are not observed and are fixed (not distributed), unknown. Random effects are neither parameters nor
 data, they are distributed yet not observed.
 >- Random effects as latent variables: governed by distributions, but unlike data, they are not observed.

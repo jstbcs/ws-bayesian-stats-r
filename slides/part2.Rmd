@@ -30,6 +30,13 @@ library("papaja")
 library(diagram)
 library(RColorBrewer)
 library("reshape2")
+library(ggplot2)
+library(papaja)
+library(spatialfil)
+library(tmvtnorm)
+library(cowplot)
+library(plotrix)
+library(Hmisc)
 
 mycols <- RColorBrewer::brewer.pal(8, "Dark2")
 ```
@@ -43,7 +50,7 @@ You can find the slides (and additional materials) here:
 
 1. Ordinal constraints
 2. Random effects
-3. Does everyone?
+3. Individual differences and "Does everyone?"
 
 # Ordinal constraints
 
@@ -1011,9 +1018,9 @@ mtext(expression(M[5]: ~ "Unconstrained"), side = 3, cex = 1.5)
 ## Systems of orders plot
 
 ```{r echo = T, fig.width=3, fig.asp=.8}
+library(diagram)
 par(mar = c(0, 0, 0, 0))
-names <- c("LL", "LH", "HL", "HH")
-o <- 1:4
+names <- c("LL", "LH", "HL", "HH"); o <- 1:4
 M <- matrix(nrow = length(o), ncol = length(o), data=0)
 M[1, 2] <- ''; M[1, 3] <- ''; M[2, 4] <- ''; M[3, 4] <- ''
 
@@ -1026,7 +1033,7 @@ plotmat(M, pos = c(1, 2, 1), name = names[c(4, 2, 3, 1)]
 ## Ordinal constraint before seing the data
 
 >- For a Bayesian analysis with ordinal constraints we need to know the prior probability of the constraint.
->- Encompassing model: A model that has all the equality constraints but let's the order free to vary.
+>- The encompassing model is a model that has all the equality constraints but lets the order free to vary.
 >- Restricted model space is the proportion of the prior probability space of the encompassing model that is in line with the ordinal constraint.
 
 ## Let's start simple
@@ -1272,7 +1279,8 @@ plotmat(M
 mtext(expression(M[2]: ~ "+ Equality"), side = 3, cex = 1.5)
 ```
 
->- Encompassing model: Need to reparameterize the factors.
+>- What is the encompassing model?
+>- Reparameterize the factors.
 >- New factor: *high* for HH, HL, and LH, and *low* for LL.
 >- What is prior probability space of the restricted model?
 >- That's right, it is 0.5.
@@ -1313,7 +1321,7 @@ c(est.disgust[1, "disgust-0"], est.disgust[1, "disgust-1"])
 
 Gelman (2005):
 
-```{r, out.width = "70%", out.extra = 'id="zoom-margin"'}
+```{r, out.width = "80%", out.extra = 'id="zoom-margin"'}
 include_graphics("pics/gelman.png")
 ```
 
@@ -1327,8 +1335,9 @@ Efron & Morris (1977)
 
 ## Random effects | Philosophy
 
->- In frequentist statistics: Data are observed and follow probability distributions. Parameters are not observed and are fixed (not distributed), unknown. Random effects are neither parameters nor
-data, they are distributed yet not observed.
+>- In frequentist statistics: Data are observed and follow probability distributions.
+>- Parameters are not observed and are fixed (not distributed), unknown.
+>- Random effects are neither parameters nor data, they are distributed yet not observed.
 >- Random effects as latent variables: governed by distributions, but unlike data, they are not observed.
 >- In Bayesian statistics: Both parameters and data are governed by distributions (but only data are observed), and so are random effects, so there is not need for a third category.
 
@@ -1429,13 +1438,13 @@ Let's start with the model setup again.
 
 Let's start with the model setup again.
 
-\[Y_{ijk} \sim \mbox{Normal}(\mu + \alpha_i + \x_j \theta, \sigma^2)\]
+\[Y_{ijk} \sim \mbox{Normal}(\mu + \alpha_i + x_j \theta, \sigma^2)\]
 
 ## Random effects | Priors for random effects
 
 Let's start with the model setup again.
 
-\[Y_{ijk} \sim \mbox{Normal}(\mu + \alpha_i + \x_j \theta, \sigma^2).\]
+\[Y_{ijk} \sim \mbox{Normal}(\mu + \alpha_i + x_j \theta, \sigma^2).\]
 
 Random intercept $\alpha_i$ has a distribution (not the prior):
 
@@ -1471,9 +1480,9 @@ Three observations:
 >- For nested data it is a bit more complicated.
 >- Take Stroop.
 >- 2 conditions, I people, K trials.
->- Typical effect size: $\frac{d}{se}.$
+>- Typical effect size: $\frac{M_d}{SD_d},$ where $SD_d = \sqrt{\frac{\sum(d_i - M_d)}{I}}.$
 >- In `BayesFactor`: $\frac{\theta}{\sigma}$
->- For the full model including random effects $\sigma$ can be interpreted as trial-by-trial variance, not between-participant variance.
+>- For the model including random effects $\sigma$ can be interpreted as trial-by-trial variance, not between-participant variance.
 
 ## Revisiting prior scales
 
@@ -1499,15 +1508,613 @@ Check out worksheet 2 on github!
 
 <img src="pics/do.png" width="220" align="right">
 
+# Individual Differences
+
+## Individual Differences
+
+>- People vary. Duh!
+>- Sometimes more and sometimes less relevant for us.
+>- Memory: We (often) care more about individual variability of memory strength than item fit.
+>- Attitudes: We care about how people are persuaded to change their attitudes, (often) not how preferences differ to begin with.
+
+<br>
+
+<center>
+<img src="pics/people.jpg" width="250">
+</center>
+
+## Qualitative Individual Differences
+
+>1. QID are defined by research question and experimental design.
+>2. QID point to differences in cognitive processing (not physical impairment or experimental manipulation).
+>3. QID are stable: Should be identifiable after sample noise is taken into account.
+
+# Example: Stroop Effect
+
+## Theoretical Statement
+
+- Colors from congruent items are faster identified than colors from incongruent items.
+- Qualitative individual differences should reflect ability to inhibit automatic reading.
+
+<br>
+
+<center>
+<img src="pics/stroop.png" width="250">
+</center>
+
+## Stroop Data
+
+```{r vbStroop,echo=F,cache=T}
+filename <- curl::curl("https://raw.githubusercontent.com/PerceptionCognitionLab/data0/master/contexteffects/FlankerStroopSimon/LEF_stroop.csv")
+stroop <- read.csv2(filename, header=TRUE, dec=".")
+
+stroop$cond <- as.numeric(factor(stroop$congruency)) #congruent -> 1, incongruent -> 2, neutral -> 3
+ntrial <- length(stroop[stroop$ID == stroop$ID[1], 1])
+nsub <- length(unique(stroop$ID))
+stroop$trial <- rep(1:ntrial, nsub)
+stroop$rt <- stroop$RT/1000 #rt data in seconds
+
+stroop <- stroop[stroop$rt > .2 & stroop$rt < 2, ]
+stroop <- subset(stroop, accuracy == 1 & cond != 3)
+
+dat <- data.frame(stroop$ID,stroop$cond,stroop$rt)
+colnames(dat) <- c('sub','cond','rt')
+```
+
+```{r, fig.asp=1, fig.align='center', fig.width=5}
+means <- with(dat, tapply(rt, list(sub, cond), mean))
+par(mar = c(5, 5, 2, 2))
+plot(means[, 1] * 1000, means[, 2] * 1000
+     , pch = 21
+     , bg = adjustcolor("slateblue", .7)
+     , xlab = "Average Congruent Response Times (ms)"
+     , ylab = "Average Incongruent Response Times (ms)"
+     , cex.lab = 1.3
+     , cex.axis = 1.3
+     , cex = 1.3
+     , ylim = c(450, 1050)
+     , xlim = c(450, 1050))
+abline(0, 1, col = "darkred", lwd = 3)
+```
+
+@vonBastian:etal:2015
+
+## Stroop Effects
+
+```{r}
+freqEst <- function(dat)
+{
+	if (mean(dat$cond %in% 1:2)<1) stop("Conditions must be 1 and 2")
+	sub <- as.integer(as.factor(dat$sub))
+	I <- length(unique(sub))
+  m <- tapply(dat$rt, list(sub, dat$cond), mean)
+  effect <- m[ , 2] - m[ , 1] 
+  ci <- t(-1 * sapply(1:I, function(x) t.test(dat$rt[sub==x] ~ dat$cond[sub==x],var.equal=T)$conf.int))
+  out <- data.frame(effect, ci, order(effect))
+  colnames(out) <- c('mean','upper','lower','order')
+  return(out)     
+}
+```
+
+```{r, fig.asp=.7, fig.width=8}
+myCol <- c('slateblue','slateblue')
+temp <- freqEst(dat)
+f <- temp[, 1:3] * 1000
+I <- nrow(f)
+o <- temp$order
+mc <- myCol[(f$mean[o] > 0)+1]
+par(mgp = c(2, .7, 0), cex = 1.2)
+plot(1:I
+     , f$mean[o]
+     , ylim = c(min(f$lower), max(f$upper))
+     , ylab = "Effect (ms)", xlab = "Individual"
+     , pch = 21
+     , bg = mc
+     , xaxt = "n"
+     , cex.lab = 1.2
+     , cex.axis = 1.2)
+axis(1, c(1, I), cex.axis = 1.2)
+abline(h=0)
+# points(1:I, f$mean[o], pch=21, bg=mc)
+arrows(1:I,f$lower[o],1:I,f$upper[o],col=mc,code=3,angle=90,len=.05)
+legend("topleft", legend = paste("m =", round(mean(f$mean)), "sd =", round(sd(f$mean))), bty = "n", lwd = 0, col = "white")
+```
+
+## Qualitative Differences
+
+```{r, fig.asp=.7, fig.width=8}
+myCol <- c('darkred','slateblue')
+temp <- freqEst(dat)
+f <- temp[, 1:3] * 1000
+I <- nrow(f)
+o <- temp$order
+mc <- myCol[(f$mean[o] > 0)+1]
+par(mgp = c(2, .7, 0), cex = 1.2)
+plot(1:I
+     , f$mean[o]
+     , ylim = c(min(f$lower), max(f$upper))
+     , ylab = "Effect (ms)", xlab = "Individual"
+     , pch = 21
+     , bg = mc
+     , xaxt = "n"
+     , cex.lab = 1.2
+     , cex.axis = 1.2)
+axis(1, c(1, sum(f$mean[o] < 0), I), cex.axis = 1.2)
+abline(h=0)
+# points(1:I, f$mean[o], pch=21, bg=mc)
+arrows(1:I,f$lower[o],1:I,f$upper[o],col=mc,code=3,angle=90,len=.05)
+```
+
+## Research Questions
+
+>- **Are there qualitative individual differences of the Stroop effect?**
+>- **Are there qualitative individual differences after sample noise is taken into account, or does everyone show a Stroop effect?**
+
+<br>
+
+<br>
+
+<center>
+<img src="pics/Hmm.png" width="200">
+</center>
+
+## Stable Differences
+
+```{r, fig.asp=.7, fig.width=8}
+myCol <- c('darkred','slateblue')
+temp <- freqEst(dat)
+f <- temp[, 1:3] * 1000
+I <- nrow(f)
+o <- temp$order
+mc <- myCol[(f$mean[o] > 0)+1]
+par(mgp = c(2, .7, 0), cex = 1.2)
+plot(1:I
+     , f$mean[o]
+     , ylim = c(min(f$lower), max(f$upper))
+     , ylab = "Effect (ms)", xlab = "Individual"
+     , pch = 21
+     , bg = mc
+     , xaxt = "n", cex.lab = 1.2
+     , cex.axis = 1.2)
+axis(1, c(1, sum(f$mean[o] < 0), I), cex.axis = 1.2)
+abline(h=0)
+# points(1:I, f$mean[o], pch=21, bg=mc)
+arrows(1:I, f$lower[o], 1:I, f$upper[o], col = mc, code = 3, angle = 90, len = .05)
+
+#no individual differences line
+K <- table(dat$sub, dat$cond)
+var.ind <- rowSums(with(dat, tapply(rt, list(sub, cond), var))/K)
+bestSD <- sqrt(mean(var.ind))*1000
+Iprobs <- ((1:I) - .5) / (I)
+z <-qnorm(Iprobs, mean(f$mean), bestSD)
+lines(1:I, z, lwd = 3, col = "hotpink1")
+legend("topleft", legend = "No differences line", lwd = 4, col = "hotpink1", bty = "n")
+```
+
+## Models
+
+- Participants: $i = 1, \ldots, I$
+- Condition: $j = 1, 2$ (congruent, incongruent)
+- Trials: $k = 1, \ldots, K_{ij}$
+- \[Y_{ijk} \sim \mbox{Normal}(\alpha_i + x_j \theta_i, \sigma^2)\]
+- $\theta_i$ is the effect
+
+## Models on true effects $\theta_i$
+
+```{r run-modfig, child = "R-code/modelFigure.Rmd", warning = F, message=F}
+```
+
+```{r, fig.asp = 1, fig.width = 4, fig.align='center'}
+No.m
+```
+
+@Haaf:2018; @Haaf:Rouder:2017
+
+## The Null Model
+
+\[\theta_i = 0\]
+
+## The Null Model
+
+```{r, fig.align='center', fig.asp=1, fig.width=5}
+beautyPlot(UniNull, Null.m)
+```
+
+
+## The Common-Effect Model
+
+\[\theta_i = \nu\]
+\[\nu \sim \mbox{Truncated-Normal}(0, \eta^2)\]
+
+## The Same-Effect Model
+
+```{r, fig.align='center', fig.asp=1, fig.width=5}
+beautyPlot(UniPos, One.m)
+```
+
+## The Positive-Effects Model
+
+\[\theta_i \sim \mbox{Truncated-Normal}(\nu, \tau^2)\]
+\[\nu \sim \mbox{Truncated-Normal}(0, \eta^2)\]
+
+## The Positive-Effects Model
+
+```{r, fig.align='center', fig.asp=1, fig.width=5}
+beautyPlot(UniPos, Pos.m)
+```
+
+## The Unconstrained Model
+
+\[\theta_i \sim \mbox{Normal}(\nu, \tau^2)\]
+\[\nu \sim \mbox{Normal}(0, \eta^2)\]
+
+## The Unconstrained Model
+
+```{r, fig.align='center', fig.asp=1, fig.width=5}
+beautyPlot(UniGen, General.m)
+```
+
+## From Models...
+
+```{r, cache = T}
+theme_set(theme_apa(base_size = 14))
+plots <- rerun.fig()
+```
+
+```{r, fig.asp = 1, fig.align='center', fig.width=6}
+plot_grid(plots[[1]]
+          , plots[[3]]
+          , plots[[5]]
+          , plots[[9]]
+          , ncol = 2
+          , hjust = c(-3.5, -1.5, -1.7, -1)
+          # , rel_widths = c(.495, .505)
+          # , rel_heights = c(1/4, rep(1/4 * scaler, 2), 1/4 * 1.1)
+          , labels=c("Null", "Common", "Positive", "Unconstrained")
+          # , align = "hv"
+)
+```
+
+## From Models... to Predictions
+
+```{r, cache = T}
+theme_set(theme_apa(base_size = 12))
+plots <- rerun.fig()
+```
+
+```{r, fig.asp = .5, fig.align='center', fig.width=9}
+plot_grid(plots[[1]]
+          , plots[[3]]
+          , plots[[5]]
+          , plots[[9]]
+          , plots[[2]]
+          , plots[[4]]
+          , plots[[6]]
+          , plots[[10]]
+          , ncol = 4
+          , hjust = c(-2.35, -1, -1.15, -.62)
+          # , rel_widths = c(.495, .505)
+          # , rel_heights = c(1/4, rep(1/4 * scaler, 2), 1/4 * 1.1)
+          , labels=c("Null", "Common", "Positive", "Unconstrained")
+          # , align = "hv"
+)
+```
+
+## From Models... to Predictions... to Evidence
+
+```{r, fig.asp = .5, fig.align='center', cache = T, fig.width=9}
+theme_set(theme_apa(base_size = 12))
+
+Null.p <- makeModelPlot(z = "Density"
+                          , dat = subset(combiDeltas
+                                         , Model == "Null Model" & figType == "Prediction")
+                          , ylab = expression(paste(hat(theta)["2"]))
+                           , xlab = expression(paste(hat(theta)["1"]))
+                          , breaks = rev(breaksEq)
+                          , strip = TRUE
+                          )
+
+One.p <- makeModelPlot(z = "Density"
+                          , dat = subset(combiDeltas
+                                        , Model == "Common-effect Model" & figType == "Prediction")
+                                , ylab = expression(paste(hat(theta)["2"]))
+                           , xlab = expression(paste(hat(theta)["1"]))
+                                , breaks = rev(breaks)
+                                )
+
+Pos.p <- makeModelPlot(z = "Density"
+                                , dat = subset(combiDeltas
+                                      , Model == "Positive-effects Model" & figType == "Prediction")
+                                , ylab = expression(paste(hat(theta)["2"]))
+                           , xlab = expression(paste(hat(theta)["1"]))
+                                , breaks = rev(breaks)
+                                )
+
+General.p <- makeModelPlot(z = "Density"
+                           , dat = subset(combiDeltas
+                                          , Model == "Unconstrained Model" & figType == "Prediction")
+                           , ylab = expression(paste(hat(theta)["2"]))
+                           , xlab = expression(paste(hat(theta)["1"]))
+                           , breaks = rev(breaks)
+                           , last = T)
+p <- geom_point(data = data.frame(x = .1, y = .15)
+           , mapping = aes(x = x, y = y)
+           , inherit.aes = FALSE
+           , color = "indianred")
+
+plots.evidence <-  align_plots( Null.p + p
+                     , One.p + p
+                     , Pos.p + p
+                     , General.p + p
+                     , SnS.p + p
+                     , align = "h"
+                     ,axis = 'l')
+
+plot_grid(plots[[1]]
+          , plots[[3]]
+          , plots[[5]]
+          , plots[[9]]
+          , plots.evidence[[1]]
+          , plots.evidence[[2]]
+          , plots.evidence[[3]]
+          , plots.evidence[[4]]
+          , ncol = 4
+          , hjust = c(-2.35, -1, -1.15, -.62)
+          # , rel_widths = c(.495, .505)
+          # , rel_heights = c(1/4, rep(1/4 * scaler, 2), 1/4 * 1.1)
+          , labels=c("Null", "Common", "Positive", "Unconstrained")
+          # , align = "hv"
+)
+```
+
+## Back to Stroop
+
+In worksheet 3. :)
+
+## "Does everyone" analysis in R
+
+>- Thesis student Lukas Klima has developed an R package: [https://github.com/lukasklima/quid](https://github.com/lukasklima/quid).
+>- Backend is BayesFactor.
+>- New argument `whichConstraints` specifies the ordinal constraints tested.
+
+<br>
+
+<img src="pics/procat.jpg" width="300" align="center">
+
+## Example: Distance from 5 | How do we represent numbers internally?
+
+<img src="pics/numbers.png" width="250" align="center">
+
+## How do we represent numbers internally? | Theoretical Positions
+
+1. Everyones uses analog representation.
+
+<br>
+
+<br>
+
+<img src="pics/skala.png" width="500" align="center">
+
+## How do we represent numbers internally? | Theoretical Positions
+
+1. Everyones uses analog representation.
+2. Everyone uses propositional representation.
+
+<br>
+
+<img src="pics/verhaeltnis.png" width="500" align="center">
+
+## How do we represent numbers internally? | Theoretical Positions
+
+1. Everyones uses analog representation.
+2. Everyone uses propositional representation.
+4. None of the above.
+
+<img src="pics/whoot.png" width="300" align="center">
+
+## Symbolic Distance
+
+```{r, fig.width=6, fig.asp=.85, fig.align='center'}
+layout(matrix(ncol=4, c(1,1,2,2,0,3,3,0), byrow=T))
+par(cex=1.1,mgp=c(2,.7,0)
+    , mar = c(.5, 2, 2, .5))
+myCol=c('lightblue','lavender','lightgreen')
+
+names=c(4:2,6:8)
+o=c(1,4,2,5,3,6)
+M=matrix(nrow=length(names),byrow=F,ncol=length(names),data=0)
+M[1,2]=M[2,3]=''
+M[4,5]=M[5,6]=''
+plotmat(t(M[o,o]),pos=c(2,2,2),name=names[o],curve=0,box.type="round",box.size=.07,box.prop=1,box.col=rep(myCol,each=2),arr.length=0)
+axis(2, at=c(.2,.8), lab=c("Faster","Slower"),cex=1)
+# box()
+mtext(side=3,adj=.5,line=-.5,"Analog-Representation",cex=1.1)
+
+names=c(2:4,6:8)
+M=matrix(nrow=length(names),byrow=F,ncol=length(names),data=0)
+M[1,2]=M[2,3]=''
+M[4,5]=M[5,6]=''
+pos=matrix(nrow=6,ncol=2)
+pos[,1]=c(.1,.4,.7,.3,.6,.9)
+pos[,2]=c(.65,.65,.65,.35,.35,.35)
+plotmat(M,pos,name=names,curve=0,box.type="round",box.size=.04,box.prop=1,box.col=c(rev(myCol),myCol),arr.length=0,arr.type='triangle')
+# box()
+mtext(side=3,adj=.5,line=-.5,"Propositional Representation",cex=1.1)
+
+
+# names=c(2:4,8:6)
+# o=c(1,4,2,5,3,6)
+# M=matrix(nrow=length(names),byrow=F,ncol=length(names),data=0)
+# M[1,2]=M[2,3]=''
+# M[4,5]=M[5,6]=''
+# plotmat(t(M[o,o]),pos=c(2,2,2),name=names[o],curve=0,box.type="round",box.size=.06,box.prop=1,box.col=myCol[c(3,3,2,2,1,1)],arr.length=0)
+# # box()
+# mtext(side=3,adj=.5,line=-.5,"Priming + Spreading Activation",cex=1.1)
+# axis(2, at=c(.2,.8), lab=c("Faster","Slower"),cex=1)
+
+names=c(2:4,6:8)
+M=matrix(nrow=length(names),byrow=F,ncol=length(names),data=0)
+# M[1,2]=M[2,3]=''
+# M[4,5]=M[5,6]=''
+pos=matrix(nrow=6,ncol=2)
+pos[,1]=c(.1,.4,.7,.3,.6,.9)
+pos[,2]=c(.65,.65,.65,.35,.35,.35)
+plotmat(M,pos,name=names,curve=0,box.type="round",box.size=.04,box.prop=1,box.col=c(rev(myCol),myCol),arr.length=0,arr.type='triangle')
+# box()
+mtext(side=3,adj=.5,line=-.5,"None of the above",cex=1.1)
+```
+
+## Data
+
+```{r plot-ld5, fig.width=7, fig.height=5, fig.align='center'}
+source('R-code/ld5.R')
+
+dat=clean()
+plotMean(dat,'')
+```
+
+@Rouder:etal:2005a
+
+## Individual differences
+
+```{r plot-ld5-all, fig.width=7, fig.height=5, fig.align='center'}
+means <- with(dat, tapply(rt, list(sub, stim), mean))
+matplot(t(means), pch = 20, col = "gray50", axes = F
+        , xlab = "Digit", ylab = "Response Time (ms)")
+axis(1,at=1:3,lab=c(2:4))
+axis(1,at=4:6,lab=c(6:8))
+axis(2, at = seq(500, 1000, 250))
+for(i in 1:nrow(means)){
+  lines(1:3, means[i, 1:3], col = adjustcolor("gray50", .5), lwd = 1.2)
+  lines(4:6, means[i, 4:6], col = adjustcolor("gray50", .5), lwd = 1.2)
+}
+lines(1:3, colMeans(means[,1:3]), lwd = 2)
+points(1:3, colMeans(means[,1:3]), pch=21, bg='cornflowerblue', cex=1.2)
+lines(4:6, colMeans(means[,4:6]), lwd = 2)
+points(4:6, colMeans(means[,4:6]), pch=21, bg='cornflowerblue', cex=1.2)
+```
+
+Rouder, Lu, Speckman, Sun, & Jiang (2005)
+
+## Individual differences
+
+```{r, fig.width=8, fig.height=5}
+myMeans=tapply(dat$rt,list(dat$sub,dat$stim),mean)
+diffs=apply(myMeans,1,diff)
+a1=diffs[1,]
+b1=diffs[2,]
+a2=-diffs[4,]
+b2=-diffs[5,]
+combo=cbind(a1,b1,a2,b2)
+plotIndv(combo,'',ylim=c(-60,200)
+         , xlabel = c(expression(paste(d[1]))
+             ,expression(paste(d[2]))
+             ,expression(paste(d[3]))
+             ,expression(paste(d[4]))))
+lines(colMeans(combo), col = "orangered2", lwd = 1.5)
+points(colMeans(combo), col = "orangered2", pch = 19)
+```
+
+Rouder, Lu, Speckman, Sun, & Jiang (2005)
+
+## Does everyone in `R`
+
+Install and load `quid`.
+
+```{r eval = F, echo = T}
+# load libraries
+library(devtools)
+install_github("lukasklima/quid")
+library(quid)
+```
+
+```{r}
+library(quid)
+```
+
+## Does everyone in `R`
+
+Documentation is still under development... 
+
+```{r echo = T}
+# check what arguments the function takes
+args(quid:::constraintBF)
+
+## LD5
+# inspect data
+str(ld5)
+?ld5
+```
+
+## Does everyone in `R`
+
+```{r echo = T, cache = T, eval = F}
+# analysis
+resLD5 <- quid:::constraintBF(formula = rt ~ sub * distance + side,
+                               data = ld5,
+                               whichRandom = c("sub"),
+                               ID = "sub",
+                               whichConstraint = c(distance = "1 > 2", distance = "2>3"))
+```
+
+## Does everyone in `R` | Priors
+
+```{r quid-calc, echo = T, cache = T}
+# analysis
+resLD5 <- quid:::constraintBF(formula = rt ~ sub * distance + side,
+                               data = ld5,
+                               whichRandom = c("sub"),
+                               ID = "sub",
+                               whichConstraint = c(distance = "1 > 2", distance = "2>3"),
+                               rscaleEffects = c("sub" = 1,
+                                                 "side" = 1/6,
+                                                 "distance" = 1/6,
+                                                 "sub:distance" = 1/10))
+```
+
+## Does everyone in `R`
+
+BF for the analog representation model:
+
+```{r echo = T}
+resLD5
+```
+
+BF for the propositional representation model:
+
+```{r echo = T}
+bf_p0 <- resLD5@generalTestObj[6]@bayesFactor[1]
+bf_u0 <- resLD5@generalTestObj[9]@bayesFactor[1]
+
+exp(bf_p0 - bf_u0)
+```
+
+Comparing analog to propositional model:
+
+```{r echo = T}
+resLD5@constraints@bayesFactor / exp(bf_p0 - bf_u0)
+```
+
+
+## Your turn
+
+Check out worksheet 3 on github!
+
+<br>
+
+<br>
+
+<br>
+
+<img src="pics/do.png" width="220" align="right">
+
 ## Bringing it all together
 
->- `BayesFactor` can do a lot of conventional tests, but in Bayesian.
->- Model comparison instead of parameter testing.
->- For a full Bayesian analysis there are many tools in addition to Bayes factor:
->- Prior predition,
->- Estimation,
->- Sensitivity analysis,
->- Data plotting(!), ...
+- Ordinal constraints help match theoretical positions to statistical analysis.
+- Both on the aggregate level and on the individual level.
+- Random effects can be used to control for person/item variability but also to answer substantive questions.
+
+<br>
 
 <img src="pics/together.jpg" width="220" align="center">
 

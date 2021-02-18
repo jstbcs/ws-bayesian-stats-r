@@ -111,6 +111,6 @@ datl <- subset(datl, !is.na(value))
 4. Make a table with the Bayes factors between these three models and the general unconstrained model.
 
 
-```{r, out.width = "20%", fig.align='right', echo = F}
+```{r, out.width = "15%", fig.align='right', echo = F}
 knitr::include_graphics("../slides/pics/do.png")
 ```

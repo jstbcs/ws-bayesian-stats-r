@@ -1,0 +1,33 @@
+---
+title: "Your Turn!"
+subtitle: "Individual differences"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(diagram)
+library(RColorBrewer)
+library(reshape2)
+
+mycols <- RColorBrewer::brewer.pal(8, "Dark2")
+```
+
+1. Now it is your turn to conduct a "Does everyone?" analysis using `quid:::constraintBF()`. First, install and load the package. The data from the Stroop task are part of the package: `stroop`.
+
+2. Use `quid:::constraintBF()` to conduct the analysis. Discuss and set prior scales first. Running the function may take a few minutes.
+
+3. The output is an S4 object. You can also access individual estimates using `resStroop@individualEffects`. Try to make a plot that resembles the one below. The blue points are observed mean differences (observed effects), the red points are the estimated effects that are calculated using `resStroop@individualEffects`.
+
+```{r, out.width = "50%", fig.align='center', echo = F}
+knitr::include_graphics("stroopplot.png")
+```
+
+4. If you have time conduct a prior sensitivity analysis (with reasonable settings!). Only run 2-4 analyses in total with reasonable alternative settings to yours. Should we be concerned about the robustness of the Bayes factor?
+
+\vspace{1cm}
+
+```{r, out.width = "25%", fig.align='right', echo = F}
+knitr::include_graphics("../slides/pics/do.png")
+```

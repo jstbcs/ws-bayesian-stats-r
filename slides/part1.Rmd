@@ -604,8 +604,7 @@ BayesFactor::ttestBF(formula = attitude ~ story
 3. Ask questions while I am here!
 
 ```{r echo = T, cache = T, eval = F}
-SourceURL <- "https://raw.githubusercontent.com/PerceptionCognitionLab/data0/master
-/contexteffects/FlankerStroopSimon/cleaning.R"
+SourceURL <- "https://raw.githubusercontent.com/PerceptionCognitionLab/data0/master/contexteffects/FlankerStroopSimon/cleaning.R"
 devtools::source_url(SourceURL)
 ```
 
@@ -645,7 +644,9 @@ stroop.agg <- stroop %>%
 ```{r eval = F, message=F, warning=F, results='hide'}
 BayesFactor::ttestBF(x = stroop.agg$incongruent
                      , y = stroop.agg$congruent
-                     , paired = T)
+                     , paired = T
+                     , rscale = 0.5
+                     , nullInterval = c(0, Inf))
 est.stroop <- BayesFactor::ttestBF(x = stroop.agg$incongruent
                      , y = stroop.agg$congruent
                      , paired = T
@@ -708,7 +709,7 @@ media_study$political_affiliation <- factor(media_study$political_affiliation)
 ```
 
 ```{r, echo = T, eval = T}
-BayesFactor::anovaBF(formula = attitude ~ story * political_affiliation
+tmp <- BayesFactor::anovaBF(formula = attitude ~ story * political_affiliation
                      , data = media_study
                      , rscaleEffects = c("story" = 1/2
                                          , "political_affiliation" = 1/2
